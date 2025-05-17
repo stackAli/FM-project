@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Endgame</title>
+    <style>
+        /* Reset some default styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Background and font styles */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1f1c2c, #928dab);
+            color: #f0f0f0;
+            animation: fadeIn 1.5s ease-in-out;
+        }
+
+        /* Centered container */
+        .container {
+            text-align: center;
+            width: 100%;
+            max-width: 900px;
+            padding: 40px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 20px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            animation: fadeInUp 2s ease-out;
+        }
+
+        /* Header styles */
+        h1 {
+            font-size: 36px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: #ffde59;
+            text-shadow: 2px 2px 5px #000;
+            animation: slideInFromTop 1s ease-out;
+        }
+
+        /* Paragraph text */
+        p {
+            font-size: 18px;
+            line-height: 1.8;
+            margin-bottom: 12px;
+            color: #f5f5f5;
+            animation: fadeInUp 2s ease-out;
+        }
+
+        /* Button styles */
+        button {
+            background: linear-gradient(90deg, #ffcc00, #ff9900);
+            color: #1a1a1a;
+            border: none;
+            padding: 15px 35px;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, background 0.3s ease;
+            animation: fadeInUp 2.5s ease-out;
+        }
+
+        button:hover {
+            transform: scale(1.1);
+            background: linear-gradient(90deg, #ffd633, #ff8000);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideInFromTop {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 28px;
+            }
+
+            .container {
+                padding: 30px;
+            }
+
+            button {
+                padding: 12px 25px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Endgame Event</h1>
+
+        {% if session.get('dice_roll') %}
+            <p><strong>Dice Roll:</strong> {{ session.get('dice_roll') }}</p>
+            <p><strong>Event:</strong> {{ session.get('event') }}</p>
+            <form action="{{ url_for('final_results') }}" method="get">
+                <button type="submit">Proceed to Final Results</button>
+            </form>
+        {% else %}
+            <form action="{{ url_for('endgame') }}" method="post">
+                <button type="submit">Roll Dice</button>
+            </form>
+        {% endif %}
+    </div>
+</body>
+</html>

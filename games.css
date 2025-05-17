@@ -1,0 +1,89 @@
+/* Reset some default styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Background and font styles */
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(45deg, #6a0dad, #9b4f96, #2a0034); /* Purple neon gradient */
+    color: #fff;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+/* Title animation */
+.animated-title {
+    font-size: 50px;
+    color: #ff00ff; /* Neon purple */
+    text-align: center;
+    margin-top: 50px;
+    text-shadow: 0 0 5px #ff00ff, 0 0 10px #ff00ff; /* Reduced neon purple glow */
+    animation: slideInFromTop 1s ease-out;
+}
+
+/* Section container */
+.animated-section {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    align-items: center;
+    margin-top: 40px;
+    animation: fadeInUp 2s ease-out;
+}
+
+/* Player Button Styles */
+.player-btn {
+    background: linear-gradient(to right, #ff00ff, #7a00b1); /* Neon purple to dark purple gradient */
+    color: white;
+    border: none;
+    padding: 20px 45px;
+    font-size: 22px;
+    font-weight: bold;
+    border-radius: 15px;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(255, 0, 255, 0.4); /* Reduced neon purple shadow */
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+    text-transform: uppercase;
+    text-align: center;
+    width: 250px;
+    margin: 10px;
+    animation: fadeInUp 2.5s ease-out;
+}
+
+/* Hover effects for buttons */
+.player-btn:hover {
+    transform: scale(1.05); /* Slightly smaller scaling */
+    background: linear-gradient(to right, #ff00ff, #b700b3); /* Neon purple to darker purple gradient */
+    box-shadow: 0 6px 12px rgba(255, 0, 255, 0.5); /* Reduced glow on hover */
+}
+
+/* Slide-in animation */
+@keyframes slideInFromTop {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Fade-in-up animation */
+@keyframes fadeInUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}

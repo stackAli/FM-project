@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Play Round - {{ player }}</title>
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #1f1c2c;
+        color: #eee;
+        margin: 0; padding: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+    }
+
+    h1, h2 {
+        text-align: center;
+        margin: 20px 0 10px 0;
+        font-weight: 600;
+        user-select: none;
+    }
+
+    h1 {
+        font-size: 2.5rem;
+        color: #ffd600;
+        text-shadow: 0 0 5px #b8860b;
+    }
+
+    h2 {
+        font-size: 1.3rem;
+        color: #00e6e6;
+        margin-bottom: 30px;
+    }
+
+    .market-event {
+        background: #2e2a44;
+        padding: 18px 25px;
+        border-radius: 12px;
+        box-shadow: 0 0 10px rgba(0, 230, 230, 0.3);
+        max-width: 600px;
+        width: 90%;
+        margin-bottom: 30px;
+        text-align: center;
+        color: #00e6e6;
+        user-select: none;
+    }
+
+    .market-event h3 {
+        margin: 0 0 8px 0;
+        font-weight: 700;
+        font-size: 1.5rem;
+    }
+
+    .market-event p {
+        margin: 0;
+        font-size: 1.1rem;
+        color: #c0ffff;
+    }
+
+    .container {
+        display: flex;
+        justify-content: center;
+        width: 100%;
+        max-width: 960px;
+        padding: 0 20px;
+        gap: 40px;
+        user-select: none;
+    }
+
+    form#gameForm {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .deck {
+        width: 150px;
+        height: 210px;
+        background: linear-gradient(135deg, #ffcc00, #ff9900);
+        border-radius: 16px;
+        box-shadow: 0 6px 15px rgba(0,0,0,0.4);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #1a1a1a;
+        font-size: 20px;
+        font-weight: 700;
+        transition: background 0.3s ease, transform 0.3s ease;
+        user-select: none;
+    }
+    .deck:hover {
+        background: linear-gradient(135deg, #ffd633, #ff8000);
+        transform: scale(1.05);
+    }
+
+    .cards-container {
+        display: flex;
+        gap: 30px;
+        perspective: 1000px;
+        margin-bottom: 20px;
+    }
+
+    /* Hide cards container initially */
+    .cards-container.hidden {
+        display: none;
+    }
+
+    .card {
+        width: 220px;
+        height: 280px;
+        background: #2e2a44;
+        border-radius: 16px;
+        padding: 18px 22px;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
+        color: #ddd;
+        text-align: left;
+        font-size: 14px;
+        line-height: 1.4;
+        cursor: pointer;
+        user-select: none;
+        transform-style: preserve-3d;
+        transform-origin: center;
+        backface-visibility: hidden;
+        transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 2px solid transparent;
+        position: relative;
+    }
+
+    /* Start flipped */
+    .card.flipped {
+        transform: rotateY(0deg);
+        border-color: #ffd600;
+        box-shadow: 0 8px 16px rgba(255, 214, 0, 0.6);
+    }
+    .card.not-flipped {
+        transform: rotateY(180deg);
+    }
+
+    /* Label styling */
+    label {
+        margin-top: 12px;
+        font-weight: 600;
+        color: #ffd600;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    input[type="radio"].choice {
+        margin-right: 8px;
+        cursor: pointer;
+    }
+
+    .info {
+        max-width: 600px;
+        width: 100%;
+        margin: 15px auto 40px auto;
+        color: #ddd;
+        text-align: center;
+        user-select: none;
+    }
+
+    .info label {
+        font-size: 16px;
+        color: #ffd600;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .info p {
+        font-size: 17px;
+        margin: 8px 0;
+    }
+
+    /* Make fraud message more prominent */
+    #fraudMessage {
+        font-weight: 900;
+        font-size: 18px;
+        color: #ff4500;
+        text-shadow: 0 0 10px #ff6347;
+        margin-bottom: 12px;
+        user-select: none;
+    }
+
+    .financing-options {
+        background: #2e2a44;
+        padding: 18px 25px;
+        border-radius: 12px;
+        box-shadow: 0 0 15px rgba(255, 214, 0, 0.4);
+        margin-top: 15px;
+        max-width: 600px;
+        width: 100%;
+        color: #fff;
+        user-select: none;
+    }
+
+    .financing-options h3 {
+        font-size: 1.3rem;
+        margin-bottom: 15px;
+        color: #ffd600;
+    }
+
+    .financing-options label {
+        font-size: 15px;
+        color: #fff;
+        display: block;
+        margin-bottom: 8px;
+        cursor: pointer;
+    }
+
+    .financing-options input[type="radio"] {
+        margin-right: 10px;
+        cursor: pointer;
+    }
+
+    button[type="submit"] {
+        margin-top: 35px;
+        padding: 14px 36px;
+        font-size: 18px;
+        font-weight: 700;
+        background: linear-gradient(90deg, #ffd600, #ff9900);
+        border: none;
+        border-radius: 10px;
+        color: #1a1a1a;
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.3s ease, transform 0.3s ease;
+    }
+
+    button[type="submit"]:hover {
+        background: linear-gradient(90deg, #ff9900, #ffd600);
+        transform: scale(1.07);
+    }
+
+</style>
+</head>
+<body>
+    <!-- Flashed messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div id="flashedMessages">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <h1>Round {{ round }}: {{ player }}'s Turn</h1>
+    <h2>Click the Project Deck to Reveal Options</h2>
+
+    <div class="market-event" role="region" aria-label="Market Event">
+        <h3>Market Event: {{ market_event.Name }}</h3>
+        <p><strong>Effect:</strong> {{ market_event.EffectDescription }} (Value: ${{ market_event.EffectValue }})</p>
+    </div>
+
+    <div class="container">
+        <form method="POST" id="gameForm" novalidate>
+            <div class="cards-container hidden" id="cardsContainer">
+                <div class="card not-flipped" tabindex="0">
+                    <strong>{{ investment_1.Name }}</strong><br>
+                    Amount: ${{ investment_1.Amount }}<br>
+                    CashFlow: ${{ investment_1.CashFlow }}<br>
+                    Risk Level: {{ investment_1.RiskLevel }}<br>
+                    Fraud Hint: {{ investment_1.FraudHint }}<br><br>
+
+                    <label>
+                        <input type="radio" name="choice" value="1" class="choice" required> Choose this
+                    </label>
+                    <input type="hidden" name="inv1_id" value="{{ investment_1.InvestmentID }}">
+                </div>
+
+                <div class="card not-flipped" tabindex="0">
+                    <strong>{{ investment_2.Name }}</strong><br>
+                    Amount: ${{ investment_2.Amount }}<br>
+                    CashFlow: ${{ investment_2.CashFlow }}<br>
+                    Risk Level: {{ investment_2.RiskLevel }}<br>
+                    Fraud Hint: {{ investment_2.FraudHint }}<br><br>
+
+                    <label>
+                        <input type="radio" name="choice" value="2" class="choice" required> Choose this
+                    </label>
+                    <input type="hidden" name="inv2_id" value="{{ investment_2.InvestmentID }}">
+                </div>
+            </div>
+
+            <div class="deck" id="deck" role="button" tabindex="0" aria-pressed="false" aria-label="Click to reveal project options">
+                <p>Project Deck</p>
+            </div>
+
+            <div class="info">
+                {% if player_fraud_detection_cards > 0 %}
+                    <label id="fraudMessage">
+                        <input type="checkbox" name="fraud_card" value="yes" id="fraudCard" />
+                        Use fraud detection card ({{ player_fraud_detection_cards }} left)
+                    </label>
+                {% else %}
+                    <p id="fraudMessage"><em>No fraud detection cards left.</em></p>
+                {% endif %}
+
+                <p><strong>Capital:</strong> ${{ player_capital }}</p>
+                <p><strong>NPV:</strong> ${{ "%.2f"|format(player_npv) }}</p>
+            </div>
+
+         {% if round >= 2 %}
+        <div class="financing-options">
+            <h3>Select a Financing Option:</h3>
+                {% for option in financing_options %}
+                <label>
+                    <input type="radio" name="financing_choice" value="{{ option.FinancingID }}" required>
+                    {{ option.Name }} (Modifier: ${{ option.Modifier }})
+                </label><br>
+                {% endfor %}
+        </div>
+        {% endif %}
+
+
+            <button type="submit">Submit Decision</button>
+        </form>
+    </div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const deck = document.getElementById('deck');
+    const cardsContainer = document.getElementById('cardsContainer');
+    const cardElements = cardsContainer.querySelectorAll('.card');
+
+    deck.addEventListener('click', () => {
+        // Hide deck
+        deck.style.display = 'none';
+
+        // Show cards container
+        cardsContainer.classList.remove('hidden');
+
+        // Flip each card with a staggered delay
+        cardElements.forEach((card, index) => {
+            setTimeout(() => {
+                card.classList.remove('not-flipped');
+                card.classList.add('flipped');
+            }, index * 200);
+        });
+    });
+});
+</script>
+
+</body>
+</html>

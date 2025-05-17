@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Game Over</title>
+</head>
+<body>
+    <h2>Game Over</h2>
+    <h3>Winner: {{ winner }}</h3>
+    <h4>Cumulative NPVs:</h4>
+    <ul>
+        {% for player_id, npv in npvs.items() %}
+            <li>Player {{ player_id }}: {{ npv }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
