@@ -301,9 +301,16 @@
                 {% else %}
                     <p id="fraudMessage"><em>No fraud detection cards left.</em></p>
                 {% endif %}
+                <div style="text-align:center; margin-bottom: 20px;">
+                    {% if player_round_npv is not none %}
+                        <p><strong>NPV This Round:</strong> {{ "%.2f"|format(player_round_npv) }}</p>
+                        <p><strong>Capital:</strong> ${{ player_capital }}</p>
+                    {% endif %}
+                    <p><strong>Cumulative NPV So Far:</strong> {{ "%.2f"|format(player_cumulative_npv) }}</p>
+                </div>
 
-                <p><strong>Capital:</strong> ${{ player_capital }}</p>
-                <p><strong>NPV:</strong> ${{ "%.2f"|format(player_npv) }}</p>
+            
+                
             </div>
 
          {% if round >= 2 %}
