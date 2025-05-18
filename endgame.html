@@ -3,33 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Endgame</title>
+    <title>Endgame Results</title>
     <style>
-        /* Reset some default styles */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        /* Background and font styles */
         body {
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
+            min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #1f1c2c, #928dab);
             color: #f0f0f0;
             animation: fadeIn 1.5s ease-in-out;
+            padding: 20px;
         }
 
-        /* Centered container */
         .container {
             text-align: center;
             width: 100%;
-            max-width: 900px;
+            max-width: 1000px;
             padding: 40px;
             background: rgba(0, 0, 0, 0.6);
             border-radius: 20px;
@@ -37,7 +34,6 @@
             animation: fadeInUp 2s ease-out;
         }
 
-        /* Header styles */
         h1 {
             font-size: 36px;
             font-weight: bold;
@@ -45,18 +41,32 @@
             color: #ffde59;
             text-shadow: 2px 2px 5px #000;
             animation: slideInFromTop 1s ease-out;
+            margin-bottom: 30px;
         }
 
-        /* Paragraph text */
-        p {
-            font-size: 18px;
-            line-height: 1.8;
-            margin-bottom: 12px;
-            color: #f5f5f5;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
             animation: fadeInUp 2s ease-out;
         }
 
-        /* Button styles */
+        th, td {
+            border: 1px solid #ddd;
+            padding: 14px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #444;
+            color: #fff;
+        }
+
+        td {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: #f5f5f5;
+        }
+
         button {
             background: linear-gradient(90deg, #ffcc00, #ff9900);
             color: #1a1a1a;
@@ -67,9 +77,7 @@
             margin-top: 30px;
             border-radius: 10px;
             cursor: pointer;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
+            display: inline-block;
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
             transition: transform 0.3s ease, background 0.3s ease;
             animation: fadeInUp 2.5s ease-out;
@@ -80,7 +88,6 @@
             background: linear-gradient(90deg, #ffd633, #ff8000);
         }
 
-        /* Animations */
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
@@ -108,7 +115,6 @@
             }
         }
 
-        /* Responsive Design */
         @media (max-width: 768px) {
             h1 {
                 font-size: 28px;
@@ -116,6 +122,10 @@
 
             .container {
                 padding: 30px;
+            }
+
+            table {
+                font-size: 14px;
             }
 
             button {
@@ -127,19 +137,36 @@
 </head>
 <body>
     <div class="container">
-        <h1>Endgame Event</h1>
+        <h1>Endgame Results</h1>
 
-        {% if session.get('dice_roll') %}
-            <p><strong>Dice Roll:</strong> {{ session.get('dice_roll') }}</p>
-            <p><strong>Event:</strong> {{ session.get('event') }}</p>
-            <form action="{{ url_for('final_results') }}" method="get">
-                <button type="submit">Proceed to Final Results</button>
-            </form>
-        {% else %}
-            <form action="{{ url_for('endgame') }}" method="post">
-                <button type="submit">Roll Dice</button>
-            </form>
-        {% endif %}
+        <table>
+            <tr>
+                <th>Player</th>
+                <th>Dice Roll</th>
+                <th>Event</th>
+                <th>Final NPV</th>
+            </tr>
+            {% for player_id, player in players.items() %}
+            <tr>
+                <td>{{ player_id }}</td>
+
+                <td>{{ dice_rolls[player_id] }}</td>
+                <td>{{ events[player_id] }}</td>
+                <td>${{ "%.2f"|format(player['npv']) }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        <form action="{{ url_for('final_results') }}" method="get">
+            <button type="submit">Proceed to Final Results</button>
+        </form>
+        <form action="{{ url_for('scoreboard') }}" method="get" style="display: inline-block;">
+            <button type="submit">View Scoreboard</button>
+        </form>
     </div>
+    
+
+
+    
 </body>
 </html>
