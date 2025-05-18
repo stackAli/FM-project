@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Game Scoreboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        .scoreboard-card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+        }
+        .npv-badge {
+            font-size: 1.2rem;
+            padding: 6px 14px;
+            border-radius: 25px;
+        }
+        .positive-npv {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .negative-npv {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 0.5rem;
+        }
+        .player-name {
+            font-size: 1.75rem;
+            font-weight: 600;
+        }
+        .summary-badges span {
+            margin-left: 0.75rem;
+            font-weight: 500;
+        }
+        table {
+            margin-top: 1rem;
+        }
+        thead th {
+            background-color: #f8f9fa;
+        }
+        tbody tr:hover {
+            background-color: #f1f3f5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <h1 class="text-center mb-5">Game Scoreboard - All Rounds</h1>
+
+        {% if scoreboard %}
+            {% for player in scoreboard %}
+            <div class="scoreboard-card">
+                <div class="player-header">
+                    <div class="player-name">{{ player.name or 'Unnamed' }}</div>
+                    <div class="summary-badges">
+                     
+                        <span class="badge bg-info">${{ "{:,.0f}".format(player.current_capital or 0) }} Capital</span>
+                        <span class="badge bg-secondary">{{ player.rounds_played or 0 }}/5 Rounds</span>
+                        
+                    </div>
+                </div>
+
+                <table class="table table-striped table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Round</th>
+                            <th>NPV</th>
+                            <th>Ending Capital</th>
+                            <th>Fraud Detected</th>
+                            <th>Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for round in player.rounds %}
+                        <tr>
+                            <td>{{ round.round_number }}</td>
+                            <td>${{ "{:,.2f}".format(round.npv or 0) }}</td>
+                            <td>${{ "{:,.0f}".format(round.capital or 0) }}</td>
+                            <td>{{ round.fraud_detected or 0 }}</td>
+                            <td>{{ round.timestamp }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-info text-center">No game data available yet.</div>
+        {% endif %}
+    </div>
+    <div class="text-center mb-4">
+        <a href="{{ url_for('final_results') }}" class="btn btn-primary btn-lg">
+            View Final Results
+        </a>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Auto-refresh every 30 seconds
+        setTimeout(() => {
+            window.location.reload();
+        }, 30000);
+    </script>
+</body>
+</html>
