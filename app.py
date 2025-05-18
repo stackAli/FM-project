@@ -80,7 +80,6 @@ def start_game():
         session['current_player_index'] = 0
         return redirect(url_for('play_round'))
     return render_template('start_game.html')
-
 @app.route('/play_round', methods=['GET', 'POST'])
 def play_round():
     players = session.get('players')
@@ -92,14 +91,12 @@ def play_round():
     current_player = player_names[current_index]
     player_data = players[current_player]
     round_num = player_data['rounds_played'] + 1
-    years_remaining = max(0, 6 - round_num)  # dynamic discounting
+    years_remaining = max(0, 6 - round_num)
 
-    # If player finished 5 rounds, switch to next player automatically
     if player_data['rounds_played'] >= 5:
         session['current_player_index'] = (current_index + 1) % len(players)
         return redirect(url_for('play_round'))
 
-    # Clear old investments and fraud session flags at the start of first round
     if round_num == 1:
         session.pop('investments', None)
         session.pop('fraud_checked', None)
@@ -107,23 +104,15 @@ def play_round():
         session.pop('fraud_redraw_used', None)
         session.pop('auto_choice', None)
 
-    # Load new investments if not already in session
     if 'investments' not in session:
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            if round_num == 1:
-                cursor.execute(
-                    "SELECT InvestmentID, Name, Amount, CashFlow, RiskLevel, FraudHint, IsFraudulent "
-                    "FROM Investments WHERE Amount <= 100000 ORDER BY NEWID()"
-                )
-            else:
-                cursor.execute(
-                    "SELECT InvestmentID, Name, Amount, CashFlow, RiskLevel, FraudHint, IsFraudulent "
-                    "FROM Investments ORDER BY NEWID()"
-                )
+            cursor.execute(
+                "SELECT InvestmentID, Name, Amount, CashFlow, RiskLevel, FraudHint, IsFraudulent "
+                f"FROM Investments {'WHERE Amount <= 100000' if round_num == 1 else ''} ORDER BY NEWID()"
+            )
             all_investments = [row_to_dict(row) for row in cursor.fetchall()]
 
-            # Ensure 2 unique investments
             unique_investments = []
             seen_ids = set()
             for inv in all_investments:
@@ -138,7 +127,6 @@ def play_round():
                 return redirect(url_for('home'))
 
             session['investments'] = unique_investments
-        # Reset fraud related session flags
         session['fraud_checked'] = False
         session['npv_penalty'] = False
         session['fraud_redraw_used'] = False
@@ -146,7 +134,6 @@ def play_round():
 
     investment_1, investment_2 = session['investments']
 
-    # Load a random market event and financing options (if round >= 2)
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT TOP 1 * FROM MarketEvents ORDER BY NEWID()")
@@ -157,7 +144,6 @@ def play_round():
             cursor.execute("SELECT * FROM FinancingOptions")
             financing_options = [row_to_dict(row) for row in cursor.fetchall()]
 
-    # Guard: skip turn if no capital and no financing options
     if player_data['capital'] <= 0 and not financing_options:
         flash(f"{current_player} has no capital left and no financing options. Skipping turn.", "danger")
         player_data['rounds_played'] += 1
@@ -172,27 +158,19 @@ def play_round():
         fraud_1 = investment_1['IsFraudulent']
         fraud_2 = investment_2['IsFraudulent']
 
-        # Fraud card usage logic
-        if use_fraud_card and player_data['fraud_detection_cards'] > 0 and not session.get('fraud_checked'):
+        # Fraud card logic (can be reused until misused)
+        if use_fraud_card and not session.get('fraud_checked'):
             session['fraud_checked'] = True
-            player_data['fraud_detection_cards'] -= 1
 
-            # Both investments fraudulent? Redraw once per round
+            # Redraw both if both are fraudulent
             if fraud_1 and fraud_2 and not session.get('fraud_redraw_used'):
                 with get_db_connection() as conn:
                     cursor = conn.cursor()
-                    if round_num == 1:
-                        cursor.execute(
-                            "SELECT InvestmentID, Name, Amount, CashFlow, RiskLevel, FraudHint, IsFraudulent "
-                            "FROM Investments WHERE Amount <= 100000 ORDER BY NEWID()"
-                        )
-                    else:
-                        cursor.execute(
-                            "SELECT InvestmentID, Name, Amount, CashFlow, RiskLevel, FraudHint, IsFraudulent "
-                            "FROM Investments ORDER BY NEWID()"
-                        )
+                    cursor.execute(
+                        "SELECT InvestmentID, Name, Amount, CashFlow, RiskLevel, FraudHint, IsFraudulent "
+                        f"FROM Investments {'WHERE Amount <= 100000' if round_num == 1 else ''} ORDER BY NEWID()"
+                    )
                     all_investments = [row_to_dict(row) for row in cursor.fetchall()]
-
                     unique_investments = []
                     seen_ids = set()
                     for inv in all_investments:
@@ -211,7 +189,6 @@ def play_round():
                 flash("Both investments were fraudulent! Redrawn. You keep your turn.", "warning")
                 return redirect(url_for('play_round'))
 
-            # One investment fraudulent? Auto-select the other
             if fraud_1 and not fraud_2:
                 flash(f"Fraud detected! '{investment_1['Name']}' is fraudulent. Auto-selecting '{investment_2['Name']}'.", "success")
                 session['auto_choice'] = '2'
@@ -219,10 +196,10 @@ def play_round():
                 flash(f"Fraud detected! '{investment_2['Name']}' is fraudulent. Auto-selecting '{investment_1['Name']}'.", "success")
                 session['auto_choice'] = '1'
             elif not fraud_1 and not fraud_2:
-                flash("Both projects are legit. Misuse of fraud card! 50% NPV penalty applied.", "danger")
+                flash("Both projects are legit. Misuse of fraud card! Your card is now revoked.", "danger")
                 session['npv_penalty'] = True
+                player_data['fraud_detection_cards'] = 0  # Revoke card permanently
 
-        # Handle investment selection (manual or auto)
         if choice or session.get('auto_choice'):
             selected = session.pop('auto_choice', None) or choice
             selected_investment = investment_1 if selected == '1' else investment_2
@@ -231,7 +208,6 @@ def play_round():
             investment_cashflow = selected_investment['CashFlow']
             is_fraudulent = selected_investment['IsFraudulent']
 
-            # Calculate discounted cash flow and NPV
             total_discounted_cash_flow = sum(
                 calculate_npv(investment_cashflow, year) for year in range(1, years_remaining + 1)
             )
@@ -239,10 +215,10 @@ def play_round():
             npv += market_event.get('EffectValue', 0)
 
             if is_fraudulent:
-                npv -= 100  # Penalty for fraudulent investment
+                npv -= 100
 
             if session.get('npv_penalty'):
-                npv *= 0.5  # 50% penalty
+                npv *= 0.5
                 session['npv_penalty'] = False
 
             modifier = 0
@@ -257,22 +233,22 @@ def play_round():
             capital_shortfall = investment_amount - starting_capital
 
             if capital_shortfall <= 0:
-                # Enough capital to pay full amount
                 player_data['capital'] -= investment_amount
             else:
-                # Not enough capital, financing choice required
                 if not financing_choice:
-                    flash("Insufficient capital! Please choose a financing option to cover the shortfall.", "danger")
+                    flash("Insufficient capital! Please choose a financing option.", "danger")
                     return redirect(url_for('play_round'))
-                # Pay what capital you have, financing covers the rest
                 player_data['capital'] -= min(investment_amount, player_data['capital'])
 
             player_data['capital'] = max(player_data['capital'], 0)
-            player_data['npv'] += round(npv, 2)
+            round_npv = round(npv, 2)
+            player_data['npv'] += round_npv
             player_data['rounds_played'] += 1
             ending_capital = player_data['capital']
 
-            # Insert round data into GameDashboard table
+            # Save round NPV for display
+            player_data['last_round_npv'] = round_npv
+
             with get_db_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute("""
@@ -290,23 +266,20 @@ def play_round():
                     selected_option['Name'] if selected_option else None,
                     market_event.get('Name'),
                     ending_capital,
-                    round(npv, 2),
+                    round_npv,
                     is_fraudulent,
                     None
                 ))
                 conn.commit()
 
-            # Clear session investment and fraud flags for next round
             session.pop('investments', None)
             session.pop('fraud_checked', None)
             session.pop('fraud_redraw_used', None)
             session.pop('auto_choice', None)
 
-            # Check if all players completed 5 rounds
             if all(p['rounds_played'] >= 5 for p in players.values()):
                 return redirect(url_for('endgame'))
 
-            # Move to next player
             session['current_player_index'] = (current_index + 1) % len(players)
             return redirect(url_for('play_round'))
 
@@ -319,40 +292,45 @@ def play_round():
         financing_options=financing_options,
         market_event=market_event,
         player_capital=player_data['capital'],
-        player_npv=round(player_data['npv'], 2),
+        player_cumulative_npv=round(player_data['npv'], 2),
+        player_round_npv=player_data.get('last_round_npv', None),
         player_fraud_detection_cards=player_data['fraud_detection_cards'],
         fraud_checked=session.get('fraud_checked', False),
     )
 
 @app.route('/endgame')
 def endgame():
+    print("ENDGAME route hit!")
     players = session.get('players')
     if not players:
-        return redirect(url_for('home'))  
+        return redirect(url_for('home'))
 
-    dice_roll = roll_dice()  
-    event = None
+    print("DEBUG players:", players)  # Add this to check players content
 
-   
-    if dice_roll <= 2:
-        event = "Hostile Takeover"
-        for player in players.values():
-            player['npv'] *= 0.8  # Reduce all players' NPV by 20% in case of hostile takeover
-    elif dice_roll == 4:
-        event = "IPO Opportunity"
-        for player in players.values():
-            player['npv'] *= 1.3  # Increase all players' NPV by 30% in case of IPO opportunity
+    events = {}
+    dice_rolls = {}
 
-    # Update the session with the new player data and event
+    for player_id, player in players.items():
+        dice_roll = roll_dice()
+        event = None
+
+        if dice_roll <= 2:
+            event = "Hostile Takeover"
+            player['npv'] *= 0.8
+        elif dice_roll == 4:
+            event = "IPO Opportunity"
+            player['npv'] *= 1.3
+        else:
+            event = "No Event"
+
+        dice_rolls[player_id] = dice_roll
+        events[player_id] = event
+
     session['players'] = players
-    session['event'] = event
-    session['dice_roll'] = dice_roll  # Store the dice roll result in the session for debugging/logging
+    session['dice_rolls'] = dice_rolls
+    session['events'] = events
 
-    # Check if the event was properly assigned and stored
-    print(f"Dice Roll: {dice_roll}, Event: {event}")  # For debugging purposes
-
-    # Return the endgame page before redirecting to final results
-    return render_template('endgame.html', dice_roll=dice_roll, event=event)  # Render endgame page first
+    return render_template('endgame.html', players=players, dice_rolls=dice_rolls, events=events)
 
 @app.route('/final_results')
 def final_results():
@@ -374,7 +352,69 @@ def final_results():
 
     return render_template('final_results.html', players=players_rounded, winner=winner, event=event, dice_roll=dice_roll)
 
+@app.route('/scoreboard')
+def scoreboard():
+    conn = get_db_connection()
+    cursor = conn.cursor()
 
+    # Get last 3 players by latest play time
+    cursor.execute("""
+        SELECT TOP 3 PlayerName
+        FROM GameDashboard
+        GROUP BY PlayerName
+        ORDER BY MAX(Timestamp) DESC
+    """)
+    recent_players = [row.PlayerName for row in cursor.fetchall()]
+
+    if not recent_players:
+        cursor.close()
+        conn.close()
+        return render_template('scoreboard.html', scoreboard=[])
+
+    query = """
+        SELECT 
+            PlayerName,
+            RoundNumber,
+            NPV,
+            EndingCapital,
+            FraudDetected,
+            Timestamp
+        FROM GameDashboard
+        WHERE PlayerName IN ({})
+        ORDER BY PlayerName, RoundNumber
+    """.format(','.join('?' * len(recent_players)))
+
+    cursor.execute(query, recent_players)
+    rows = cursor.fetchall()
+
+    scoreboard_data = {}
+    for row in rows:
+        pname = row.PlayerName
+        if pname not in scoreboard_data:
+            scoreboard_data[pname] = {
+                'name': pname,
+                'rounds_played': 0,
+                'total_npv': 0.0,
+                'current_capital': 0.0,
+                'frauds_detected': 0,
+                'fraud_detection_cards': 0,
+                'rounds': []
+            }
+        scoreboard_data[pname]['rounds_played'] += 1
+        scoreboard_data[pname]['total_npv'] += row.NPV or 0
+        scoreboard_data[pname]['current_capital'] = row.EndingCapital or scoreboard_data[pname]['current_capital']
+        scoreboard_data[pname]['rounds'].append({
+            'round_number': row.RoundNumber,
+            'npv': row.NPV,
+            'capital': row.EndingCapital,
+            'fraud_detected': row.FraudDetected or 0,
+            'timestamp': row.Timestamp.strftime('%Y-%m-%d %H:%M:%S') if row.Timestamp else 'N/A'
+        })
+
+    cursor.close()
+    conn.close()
+
+    return render_template('scoreboard.html', scoreboard=list(scoreboard_data.values()))
 
 if __name__ == '__main__':
     app.run(debug=True)
